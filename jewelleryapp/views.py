@@ -4238,7 +4238,7 @@ class RecentProductsWithFallbackAPIView(ListAPIView):
 
     def get_queryset(self):
         limit = int(self.request.query_params.get('limit', 20))
-        days = int(self.request.query_params.get('days', 15))
+        days = int(self.request.query_params.get('days', 30))
         cutoff_date = timezone.now() - timedelta(days=days)
 
         recent_qs = Product.objects.filter(created_at__gte=cutoff_date).order_by('-id')[:limit]
@@ -6937,10 +6937,10 @@ class MegaNavbar(APIView):
 
         # Static price ranges
         price_ranges = [
-            { "id": 1, "label": "<25K", "icon": "/public/assets/Images/subcategory/rate/r1.png" },
-            { "id": 2, "label": "25K - 50K", "icon": "/public/assets/Images/subcategory/rate/r2.png" },
-            { "id": 3, "label": "50K - 1L", "icon": "/public/assets/Images/subcategory/rate/r3.png" },
-            { "id": 4, "label": "1L & Above", "icon": "/public/assets/Images/subcategory/rate/r4.png" },
+            { "id": 1, "label": "<25K", "icon": "https://res.cloudinary.com/dadqevs2b/image/upload/v1755512227/Frame_40151_2_fyg5tz.png" },
+            { "id": 2, "label": "25K - 50K", "icon": "https://res.cloudinary.com/dadqevs2b/image/upload/v1755512227/Frame_40151_1_mh98bp.png" },
+            { "id": 3, "label": "50K - 1L", "icon": "https://res.cloudinary.com/dadqevs2b/image/upload/v1755512227/Frame_40151_3_kluwsu.png" },
+            { "id": 4, "label": "1L & Above", "icon": "https://res.cloudinary.com/dadqevs2b/image/upload/v1755512226/Frame_40151_4_f8mmqx.png" },
         ]
 
         #  Special "All Jewellery" option
