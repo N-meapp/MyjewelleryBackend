@@ -7099,7 +7099,7 @@ class CombinedSuggestionsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        query = request.GET.get('q', '').strip()
+        query = request.GET.get('query', '').strip()
 
         suggested_categories = []
         suggested_products = []
