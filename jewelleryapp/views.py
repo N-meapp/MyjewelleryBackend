@@ -7095,12 +7095,10 @@ class MegaNavbar(APIView):
 #         return Response(data)
 
 
-
 class CombinedSuggestionsView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, *args, **kwargs):
-        user = request.user if request.user.is_authenticated else None
+    def get(self, request):
         query = request.GET.get('q', '').strip()
 
         suggested_categories = []
@@ -7109,7 +7107,7 @@ class CombinedSuggestionsView(APIView):
         popular_products = []
 
         if query:
-            # Suggested categories
+            # Show suggestions based on query (material or category/product name)
             material_match = Material.objects.filter(name__icontains=query).first()
             if material_match:
                 suggested_categories = Category.objects.filter(
@@ -7120,11 +7118,14 @@ class CombinedSuggestionsView(APIView):
             else:
                 suggested_categories = Category.objects.filter(name__icontains=query)
 
-            # Suggested products
             suggested_products = Product.objects.filter(head__icontains=query)
 
+            # Popular should be empty if query exists
+            popular_categories = []
+            popular_products = []
+
         else:
-            # Popular categories
+            # Show popular items when no query is provided
             pop_cat_ids = (
                 UserVisit.objects
                 .values('product__category')
@@ -7134,7 +7135,6 @@ class CombinedSuggestionsView(APIView):
             )
             popular_categories = Category.objects.filter(id__in=pop_cat_ids) if pop_cat_ids else Category.objects.order_by('?')[:5]
 
-            # Popular products
             pop_prod_ids = (
                 UserVisit.objects
                 .values('product')
@@ -7144,21 +7144,90 @@ class CombinedSuggestionsView(APIView):
             )
             popular_products = Product.objects.filter(id__in=pop_prod_ids) if pop_prod_ids else Product.objects.order_by('?')[:10]
 
-        # Optional: GIF
+            # Suggested should be empty if no query
+            suggested_categories = []
+            suggested_products = []
+
+        # Optional: Search GIF
         gif = SearchGif.objects.first()
         gif_url = gif.image.url if gif else None
 
         data = {
             "gif": gif_url,
-            "suggested_categories": CategoryNameSerializer(suggested_categories, many=True).data,
-            "popular_categories": CategoryNameSerializer(popular_categories, many=True).data,
-            # 👇 Suggested products with extra fields
-            "suggested_products": SuggestedProductSerializer(suggested_products, many=True).data,
-            # 👇 Popular products untouched
-            "popular_products": PopularProductSerializer(popular_products, many=True).data,
+            "suggested_categories": CategoryNameSerializer(suggested_categories, many=True).data if suggested_categories else [],
+            "suggested_products": SuggestedProductSerializer(suggested_products, many=True).data if suggested_products else [],
+            "popular_categories": CategoryNameSerializer(popular_categories, many=True).data if popular_categories else [],
+            "popular_products": SuggestedProductSerializer(popular_products, many=True).data if popular_products else [],
         }
 
         return Response(data)
+
+
+
+
+# class CombinedSuggestionsView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def get(self, request, *args, **kwargs):
+#         user = request.user if request.user.is_authenticated else None
+#         query = request.GET.get('q', '').strip()
+
+#         suggested_categories = []
+#         suggested_products = []
+#         popular_categories = []
+#         popular_products = []
+
+#         if query:
+#             # Suggested categories
+#             material_match = Material.objects.filter(name__icontains=query).first()
+#             if material_match:
+#                 suggested_categories = Category.objects.filter(
+#                     product__metal__material=material_match
+#                 ).distinct()
+#                 if not suggested_categories.exists():
+#                     suggested_categories = Category.objects.filter(name__icontains=query)
+#             else:
+#                 suggested_categories = Category.objects.filter(name__icontains=query)
+
+#             # Suggested products
+#             suggested_products = Product.objects.filter(head__icontains=query)
+
+#         else:
+#             # Popular categories
+#             pop_cat_ids = (
+#                 UserVisit.objects
+#                 .values('product__category')
+#                 .annotate(visits=Count('id'))
+#                 .order_by('-visits')
+#                 .values_list('product__category', flat=True)[:5]
+#             )
+#             popular_categories = Category.objects.filter(id__in=pop_cat_ids) if pop_cat_ids else Category.objects.order_by('?')[:5]
+
+#             # Popular products
+#             pop_prod_ids = (
+#                 UserVisit.objects
+#                 .values('product')
+#                 .annotate(visits=Count('id'))
+#                 .order_by('-visits')
+#                 .values_list('product', flat=True)[:10]
+#             )
+#             popular_products = Product.objects.filter(id__in=pop_prod_ids) if pop_prod_ids else Product.objects.order_by('?')[:10]
+
+#         # Optional: GIF
+#         gif = SearchGif.objects.first()
+#         gif_url = gif.image.url if gif else None
+
+#         data = {
+#             "gif": gif_url,
+#             "suggested_categories": CategoryNameSerializer(suggested_categories, many=True).data,
+#             "popular_categories": CategoryNameSerializer(popular_categories, many=True).data,
+#             # 👇 Suggested products with extra fields
+#             "suggested_products": SuggestedProductSerializer(suggested_products, many=True).data,
+#             # 👇 Popular products untouched
+#             "popular_products": PopularProductSerializer(popular_products, many=True).data,
+#         }
+
+#         return Response(data)
 
 
 
