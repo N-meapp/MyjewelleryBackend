@@ -5292,15 +5292,17 @@ class ProductListByGender(APIView):
         min_price = min(grand_totals) if grand_totals else 0
         max_price = max(grand_totals) if grand_totals else 0
 
-        # Use only if it's still a queryset
+        # Materials
         materials = Material.objects.filter(
             id__in=products_qs.values_list('metal__material__id', flat=True)
         ).values('id', 'name').distinct()
 
+        # Gemstones
         gemstones = Gemstone.objects.filter(
             productstone__product__in=products_qs
         ).values('id', 'name').distinct()
 
+        # Metal colors with HEX codes
         metal_colors = Metal.objects.filter(
             id__in=products_qs.values_list('metal_id', flat=True)
         ).values_list("color", flat=True).distinct()
@@ -5314,6 +5316,7 @@ class ProductListByGender(APIView):
                 hex_code = "#CCCCCC"
             colors_with_codes.append({"color": color, "code": hex_code})
 
+        # Categories
         categories = products_qs.values('category__id', 'category__name').distinct()
         category_list = [{"id": c["category__id"], "sub_name": c["category__name"]} for c in categories]
 
@@ -5334,7 +5337,7 @@ class ProductListByGender(APIView):
 
         products_qs = Product.objects.filter(gender=gender)
         filter_category = self.get_filter_data(products_qs)
-        serialized_products = ProductSerializer(products_qs, many=True).data
+        serialized_products = ProductSerializer(products_qs, many=True, context={"request": request}).data
 
         return Response({
             "filter_category": filter_category,
@@ -5349,13 +5352,14 @@ class ProductListByGender(APIView):
 
         products_qs = Product.objects.filter(gender=gender)
 
+        # Reset filters
         clear_flag = request.data.get("clear", False)
         if isinstance(clear_flag, str):
             clear_flag = clear_flag.lower() == "true"
 
         if clear_flag:
             filter_category = self.get_filter_data(products_qs)
-            serialized_products = ProductSerializer(products_qs, many=True).data
+            serialized_products = ProductSerializer(products_qs, many=True, context={"request": request}).data
             return Response({
                 "filter_category": filter_category,
                 "products": serialized_products
@@ -5396,9 +5400,8 @@ class ProductListByGender(APIView):
                     except (TypeError, ValueError, AttributeError):
                         continue
 
-                # Now filtered_products is a list, not a queryset
                 filter_category = self.get_filter_data(Product.objects.filter(id__in=[p.id for p in filtered_products]))
-                serialized_products = ProductSerializer(filtered_products, many=True).data
+                serialized_products = ProductSerializer(filtered_products, many=True, context={"request": request}).data
 
                 return Response({
                     "filter_category": filter_category,
@@ -5410,13 +5413,12 @@ class ProductListByGender(APIView):
 
         # No price filtering applied
         filter_category = self.get_filter_data(products_qs)
-        serialized_products = ProductSerializer(products_qs, many=True).data
+        serialized_products = ProductSerializer(products_qs, many=True, context={"request": request}).data
 
         return Response({
             "filter_category": filter_category,
             "products": serialized_products
         }, status=status.HTTP_200_OK)
-
 
 
 # class ProductListByGender(APIView):
