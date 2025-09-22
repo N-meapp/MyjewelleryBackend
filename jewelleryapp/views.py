@@ -4198,31 +4198,25 @@ class HeaderDetailAPIView(APIView):
         except Header.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        slider_images = request.FILES.getlist('slider_images')
-        main_imgs = request.FILES.getlist('main_img')
-        main_mobile_imgs = request.FILES.getlist('main_mobile_img')
+        # Only update fields that are provided
+        if 'slider_images' in request.FILES:
+            slider_images = request.FILES.getlist('slider_images')
+            uploaded_slider_images = [upload(img)['url'] for img in slider_images]
+            header.slider_images = uploaded_slider_images
 
-        uploaded_slider_images = []
-        uploaded_main_imgs = []
-        uploaded_main_mobile_imgs = []
+        if 'main_img' in request.FILES:
+            main_imgs = request.FILES.getlist('main_img')
+            uploaded_main_imgs = [upload(img)['url'] for img in main_imgs]
+            header.main_img = uploaded_main_imgs
 
-        for img in slider_images:
-            uploaded_slider_images.append(upload(img)['url'])
+        if 'main_mobile_img' in request.FILES:
+            main_mobile_imgs = request.FILES.getlist('main_mobile_img')
+            uploaded_main_mobile_imgs = [upload(img)['url'] for img in main_mobile_imgs]
+            header.main_mobile_img = uploaded_main_mobile_imgs
 
-        for img in main_imgs:
-            uploaded_main_imgs.append(upload(img)['url'])
-
-        for img in main_mobile_imgs:
-            uploaded_main_mobile_imgs.append(upload(img)['url'])
-
-        header.slider_images = uploaded_slider_images
-        header.main_img = uploaded_main_imgs
-        header.main_mobile_img = uploaded_main_mobile_imgs
         header.save()
-
         serializer = HeaderSerializer(header)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
     def delete(self, request, pk, *args, **kwargs):
         try:
             header = Header.objects.get(pk=pk)
