@@ -254,8 +254,17 @@ class CategorySerializer(serializers.ModelSerializer):
 
         return instance
 
+class MaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Material
+        fields = '__all__'
+
 class MetalSerializer(serializers.ModelSerializer):
     material = MaterialSerializer(read_only=True)
+    material_id = serializers.PrimaryKeyRelatedField(
+        queryset=Material.objects.all(), source="material", write_only=True
+    )
+
     class Meta:
         model = Metal
         fields = '__all__'
@@ -265,10 +274,23 @@ class MetalSerializer(serializers.ModelSerializer):
         rep['image'] = instance.image.url if instance.image else None
         return rep
 
+
+
 class StoneSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Gemstone
-        fields = ['id', 'name', 'unit_price']
+        fields = ['id', 'name', 'unit_price', 'image', 'color', 'clarity', 'shape']
+        extra_kwargs = {
+            'name': {'required': False},
+            'unit_price': {'required': False},
+            'color': {'required': False},
+            'shape': {'required': False},
+        }
+
+    def get_image(self, obj):
+        return obj.image.url if obj.image else None
 
 
 # Serializer for related stones
@@ -403,6 +425,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
+            'id',
             'username',
             'title',
             'full_name',
@@ -436,10 +459,14 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 class MaterialSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Material
-        fields = '__all__'
+        fields = ['id', 'name', 'image']
 
+    def get_image(self, obj):
+        return obj.image.url if obj.image else None
 
 
 # class ProductShortSerializer(serializers.ModelSerializer):

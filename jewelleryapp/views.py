@@ -613,12 +613,12 @@ class ClassicProductDetailAPIView(APIView):
     
 
 # Material API
-class MaterialListCreateAPIView(BaseListCreateAPIView):
-    model = Material
+class MaterialListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Material.objects.all().order_by('-id')
     serializer_class = MaterialSerializer
 
-class MaterialDetailAPIView(BaseDetailAPIView):
-    model = Material
+class MaterialDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Material.objects.all()
     serializer_class = MaterialSerializer
 
 
@@ -726,23 +726,26 @@ class SevenCategoriesAPIView(APIView):
             "categories": serializer.data
         }, status=status.HTTP_200_OK)
 
-
-# Metal API
-class MetalListCreateAPIView(BaseListCreateAPIView):
-    model = Metal
+# ✅ List + Create
+class MetalListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Metal.objects.all()
     serializer_class = MetalSerializer
 
-class MetalDetailAPIView(BaseDetailAPIView):
-    model = Metal
+class MetalDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Metal.objects.all()
     serializer_class = MetalSerializer
 
-# Stone API
-class StoneListCreateAPIView(BaseListCreateAPIView):
-    model = Gemstone
+    def update(self, request, *args, **kwargs):
+        # ✅ Make PUT behave like PATCH (no mandatory fields required)
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
+
+class StoneListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Gemstone.objects.all().order_by('-id')
     serializer_class = StoneSerializer
 
-class StoneDetailAPIView(BaseDetailAPIView):
-    model = Gemstone
+class StoneDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Gemstone.objects.all()
     serializer_class = StoneSerializer
 
 # class NavbarCategoryListCreateAPIView(generics.ListCreateAPIView):
@@ -3883,6 +3886,30 @@ class UserProfileImageUpdateView(APIView):
                 "image_url": full_url
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlockUserAPIView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            profile = UserProfile.objects.get(pk=pk)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get("action", "block")  # default: block
+
+        if action == "block":
+            profile.is_blocked = True
+            message = "User has been blocked."
+        elif action == "unblock":
+            profile.is_blocked = False
+            message = "User has been unblocked."
+        else:
+            return Response({"error": "Invalid action. Use 'block' or 'unblock'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        profile.save()
+        serializer = UserProfileSerializer(profile)
+        return Response({"message": message, "profile": serializer.data}, status=status.HTTP_200_OK)
 
 
 

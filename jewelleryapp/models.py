@@ -393,7 +393,6 @@ class UserProfile(models.Model):
         ('Mr', 'Mr'),
         ('Ms', 'Ms'),
         ('Mrs', 'Mrs'),
-        # You can add more as needed
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -407,9 +406,11 @@ class UserProfile(models.Model):
     email = models.EmailField(blank=True, null=True)
     image = CloudinaryField('image', blank=True, null=True)
     agree = models.BooleanField(default=False, help_text="User must agree to privacy policy")
+    is_blocked = models.BooleanField(default=False)  # ✅ New field
+
     def __str__(self):
         return f"{self.title} {self.full_name}" if self.title else self.full_name
-         
+
 # wishlist functioning
 
 
